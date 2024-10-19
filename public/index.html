@@ -12,10 +12,53 @@
     <button type="submit">Upload</button>
 </form>
 
+<h2>Record Your Voice</h2>
+<button id="recordButton">Start Recording</button>
+<button id="stopButton" disabled>Stop Recording</button>
+<audio id="recordedAudio" controls></audio>
+
 <h2>Explore Voice Files</h2>
 <div id="fileList"></div>
 
 <script>
+    let mediaRecorder;
+    let audioChunks = [];
+
+    document.getElementById('recordButton').addEventListener('click', async () => {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+
+        mediaRecorder.addEventListener('dataavailable', event => {
+            audioChunks.push(event.data);
+        });
+
+        mediaRecorder.addEventListener('stop', () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            document.getElementById('recordedAudio').src = audioUrl;
+
+            // Upload the recorded audio
+            const formData = new FormData();
+            formData.append('voiceFile', audioBlob, 'recorded_audio.wav');
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            }).then(() => {
+                loadFiles();
+            });
+        });
+
+        document.getElementById('recordButton').disabled = true;
+        document.getElementById('stopButton').disabled = false;
+    });
+
+    document.getElementById('stopButton').addEventListener('click', () => {
+        mediaRecorder.stop();
+        document.getElementById('recordButton').disabled = false;
+        document.getElementById('stopButton').disabled = true;
+    });
+
     async function loadFiles() {
         const response = await fetch('/files');
         const files = await response.json();
@@ -30,6 +73,15 @@
             fileListDiv.appendChild(fileName);
             fileListDiv.appendChild(audioElement);
         });
+
+        // Show detected gender if available
+        const urlParams = new URLSearchParams(window.location.search);
+        const gender = urlParams.get('gender');
+        if (gender && gender !== 'Error') {
+            const genderElement = document.createElement('p');
+            genderElement.textContent = `Gender detected: ${gender}`;
+            fileListDiv.prepend(genderElement);
+        }
     }
 
     // Load files when the page loads
