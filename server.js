@@ -51,7 +51,7 @@ app.post('/upload', upload.single('voiceFile'), async (req, res) => {
         const response = await axios.post('https://api.assemblyai.com/v2/transcript', formData, {
             headers: {
                 ...formData.getHeaders(),
-                'authorization': 'e1c3a01f5732419fb849c75a9f76d9c0'
+                'authorization': 'YOUR_ASSEMBLYAI_API_KEY'
             }
         });
 

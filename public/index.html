@@ -19,6 +19,7 @@
 
 <h2>Explore Voice Files</h2>
 <div id="fileList"></div>
+<div id="genderResult"></div>
 
 <script>
     let mediaRecorder;
@@ -77,10 +78,18 @@
         // Show detected gender if available
         const urlParams = new URLSearchParams(window.location.search);
         const gender = urlParams.get('gender');
-        if (gender && gender !== 'Error') {
-            const genderElement = document.createElement('p');
-            genderElement.textContent = `Gender detected: ${gender}`;
-            fileListDiv.prepend(genderElement);
+        if (gender) {
+            const genderResultDiv = document.getElementById('genderResult');
+            genderResultDiv.innerHTML = '';
+            if (gender !== 'Error') {
+                const genderElement = document.createElement('p');
+                genderElement.textContent = `Gender detected: ${gender}`;
+                genderResultDiv.appendChild(genderElement);
+            } else {
+                const errorElement = document.createElement('p');
+                errorElement.textContent = 'Error detecting gender. Please try again.';
+                genderResultDiv.appendChild(errorElement);
+            }
         }
     }
 
