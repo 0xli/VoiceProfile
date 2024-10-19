@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice File Uploader</title>
+</head>
+<body>
+<h1>Upload a Voice File</h1>
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="voiceFile" accept="audio/*" required>
+    <button type="submit">Upload</button>
+</form>
+
+<h2>Explore Voice Files</h2>
+<div id="fileList"></div>
+
+<script>
+    async function loadFiles() {
+        const response = await fetch('/files');
+        const files = await response.json();
+        const fileListDiv = document.getElementById('fileList');
+        fileListDiv.innerHTML = '';
+        files.forEach(file => {
+            const audioElement = document.createElement('audio');
+            audioElement.controls = true;
+            audioElement.src = `/uploads/${file}`;
+            const fileName = document.createElement('p');
+            fileName.textContent = file;
+            fileListDiv.appendChild(fileName);
+            fileListDiv.appendChild(audioElement);
+        });
+    }
+
+    // Load files when the page loads
+    window.onload = loadFiles;
+</script>
+</body>
+</html>
