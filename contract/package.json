@@ -1,0 +1,19 @@
+{
+  "name": "voice-nft-contract",
+  "version": "1.0.0",
+  "description": "Smart contract for minting VoiceNFTs.",
+  "main": "deploy.js",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js --network goerli"
+  },
+  "dependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.1.1",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/contracts": "^4.7.0",
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.0",
+    "hardhat": "^2.12.6"
+  }
+}
+
