@@ -1,0 +1,35 @@
+body {
+  background-image: url('background.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+.app-container {
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  margin: 20px auto;
+  max-width: 800px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 30px;
+  height: auto;
+  margin-right: 10px;
+}
+
+.title {
+  font-size: 24px;
+  color: #333;
+  margin: 0;
+  line-height: 30px;
+}
