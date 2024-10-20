@@ -103,8 +103,8 @@ const ConnectWallet = () => {
             setStatus('File uploaded successfully!');
             setGender(response.data.gender);
         } catch (error) {
-            console.error('Error uploading file:', error);
-            setStatus('Error uploading file.');
+            console.error('Detailed upload error:', error.response ? error.response.data : error);
+            setStatus('Error uploading file. Check console for details.');
         }
     };
 

@@ -8,13 +8,15 @@ const pinFileToIPFS = async (file) => {
   let data = new FormData();
   data.append('file', file);
 
+  console.log(url,process.env.PINATA_SECRET_API_KEY);
   const res = await axios.post(url, data, {
     headers: {
       'pinata_api_key': process.env.PINATA_API_KEY,
-      'pinata_secret_api_key': process.env.PINATA_SECRET_KEY,
+      'pinata_secret_api_key': process.env.PINATA_SECRET_API_KEY,
       ...data.getHeaders()
     }
   });
+  console.log(res.data);
   return res.data;
 };
 
