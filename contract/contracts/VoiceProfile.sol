@@ -38,4 +38,8 @@ contract VoiceProfile is ERC721URIStorage, Ownable {
         voiceAttributes[tokenId] = VoiceAttributes(voiceHash, voiceUrl, gender, nativeLanguage, location);
         _tokenIdCounter++;
     }
+
+    function getCurrentTokenId() public view returns (uint256) {
+        return _tokenIdCounter;
+    }
 }

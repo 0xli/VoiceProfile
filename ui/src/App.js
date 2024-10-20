@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect } from 'wagmi';
+import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect, useContractWrite, usePrepareContractWrite } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
 import { publicProvider } from 'wagmi/providers/public';
@@ -60,8 +60,11 @@ const VoiceRecorder = ({ onRecordingComplete }) => {
     );
 };
 
+const CONTRACT_ADDRESS = '0x1a1F1f4528abe4E9a08FC532fb7552a4ccfa618A';
+const ABI = [/* Include the ABI for the mintVoiceProfile function */];
+
 const ConnectWallet = () => {
-    const { connect, error, isLoading } = useConnect();
+    const { connect, error: connectError, isLoading } = useConnect();
     const { disconnect } = useDisconnect();
     const { address, isConnected } = useAccount();
     const [file, setFile] = useState(null);
@@ -69,6 +72,17 @@ const ConnectWallet = () => {
     const [gender, setGender] = useState('');
     const [totalSupply, setTotalSupply] = useState(0);
     const [maxSupply, setMaxSupply] = useState(0);
+    const [mintData, setMintData] = useState(null);
+
+    const { config } = usePrepareContractWrite({
+        address: CONTRACT_ADDRESS,
+        abi: ABI,
+        functionName: 'mintVoiceProfile',
+        args: mintData ? [mintData.audioUrl, mintData.ipfsHash, mintData.gender, 'Unknown', 'Unknown'] : undefined,
+        enabled: Boolean(mintData),
+    });
+
+    const { write: mint, error: mintError } = useContractWrite(config);
 
     useEffect(() => {
         fetchMintingStatus();
@@ -76,7 +90,7 @@ const ConnectWallet = () => {
 
     const fetchMintingStatus = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/mintingStatus');
+            const response = await axios.get('http://localhost:5001/mintingStatus');
             setTotalSupply(response.data.totalSupply);
             setMaxSupply(response.data.maxSupply);
         } catch (error) {
@@ -116,13 +130,28 @@ const ConnectWallet = () => {
                 },
             });
 
-            setStatus('File uploaded and NFT minted successfully!');
+            setStatus('File uploaded successfully. Ready to mint NFT.');
             setGender(response.data.gender);
-            setTotalSupply(response.data.totalSupply);
-            setMaxSupply(response.data.maxSupply);
+            setMintData(response.data);
         } catch (error) {
             console.error('Error uploading file:', error);
-            setStatus('Error uploading file and minting NFT.');
+            setStatus('Error uploading file.');
+        }
+    };
+
+    const handleMint = async () => {
+        if (!mintData) {
+            setStatus('Please upload a file first.');
+            return;
+        }
+
+        try {
+            await mint?.();
+            setStatus('NFT minted successfully!');
+            fetchMintingStatus(); // Update the minting status after successful mint
+        } catch (error) {
+            console.error('Error minting NFT:', error);
+            setStatus('Error minting NFT.');
         }
     };
 
@@ -134,7 +163,8 @@ const ConnectWallet = () => {
                     <button onClick={() => disconnect()}>Disconnect</button>
                     <input type="file" onChange={handleFileChange} accept="audio/*" />
                     <VoiceRecorder onRecordingComplete={handleRecordingComplete} />
-                    <button onClick={handleUpload}>Upload, Analyze, and Mint NFT</button>
+                    <button onClick={handleUpload}>Upload and Analyze</button>
+                    {mintData && <button onClick={handleMint}>Mint NFT</button>}
                     <p>{status}</p>
                     {gender && <p>Detected gender: {gender}</p>}
                     <p>VoiceProfiles minted: {totalSupply} / {maxSupply}</p>
@@ -144,9 +174,10 @@ const ConnectWallet = () => {
                     <button onClick={handleConnect} disabled={isLoading}>
                         {isLoading ? 'Connecting...' : 'Connect to MetaMask'}
                     </button>
-                    {error && <div>{error.message}</div>}
+                    {connectError && <div>{connectError.message}</div>}
                 </div>
             )}
+            {mintError && <div>Error: {mintError.message}</div>}
         </div>
     );
 };

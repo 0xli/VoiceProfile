@@ -41,11 +41,12 @@ const upload = multer({
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const CONTRACT_ADDRESS = '0x1a1F1f4528abe4E9a08FC532fb7552a4ccfa618A';
+console.log(SEPOLIA_RPC_URL);
+// Create provider
+const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);
 
-// Initialize ethers provider and signer
-const provider = new ethers.providers.JsonRpcProvider(SEPOLIA_RPC_URL);
-const signer = new ethers.Wallet(PRIVATE_KEY, provider);
-const contract = new ethers.Contract(CONTRACT_ADDRESS, VoiceProfileABI, signer);
+// Create contract instance
+const contract = new ethers.Contract(CONTRACT_ADDRESS, VoiceProfileABI, provider);
 
 app.post('/upload', upload.single('voiceFile'), async (req, res) => {
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
@@ -81,20 +82,12 @@ app.post('/upload', upload.single('voiceFile'), async (req, res) => {
             gender = speakers[0].label === 'male' ? 'Male' : 'Female';
         }
 
-        // Mint the NFT
-        const tx = await contract.mintVoiceProfile(audioUrl, pinataResult.IpfsHash, gender, 'Unknown', 'Unknown');
-        await tx.wait();
-
-        // Get the total supply
-        const totalSupply = await contract.totalSupply();
-        const maxSupply = await contract.maxSupply();
-
+        // Instead of minting, return the necessary data for frontend to mint
         res.status(200).json({
             audioUrl,
             ipfsHash: pinataResult.IpfsHash,
             gender,
-            totalSupply: totalSupply.toString(),
-            maxSupply: maxSupply.toString()
+            // You might want to include other metadata here
         });
     } catch (error) {
         console.error('Error processing file:', error);
@@ -105,15 +98,25 @@ app.post('/upload', upload.single('voiceFile'), async (req, res) => {
 // Add a new route to get minting status
 app.get('/mintingStatus', async (req, res) => {
     try {
-        const totalSupply = await contract.totalSupply();
-        const maxSupply = await contract.maxSupply();
+        let maxSupply;
+
+        // Check if maxSupply is a function or state variable
+        if (typeof contract.maxSupply === 'function') {
+            maxSupply = await contract.maxSupply();
+        } else {
+            maxSupply = await contract.maxSupply();
+        }
+
+        // Get the current token ID (which represents the current supply)
+        const currentTokenId = await contract.getCurrentTokenId();
+
         res.json({
-            totalSupply: totalSupply.toString(),
+            currentSupply: currentTokenId.toString(),
             maxSupply: maxSupply.toString()
         });
     } catch (error) {
         console.error('Error getting minting status:', error);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Server error', details: error.message });
     }
 });
 
