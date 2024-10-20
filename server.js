@@ -1,7 +1,8 @@
-// Install dependencies: express, multer, axios, form-data
+// Install dependencies: express, multer, axios, form-data, dotenv
 // Run the backend with: node server.js
 
 // server.js
+require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -44,18 +45,51 @@ app.post('/upload', upload.single('voiceFile'), async (req, res) => {
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
 
     try {
-        // Send the file to an alternative gender detection API (e.g., AssemblyAI)
+        // Upload the file to Pinata for a publicly accessible URL
         const formData = new FormData();
-        formData.append('audio', fs.createReadStream(filePath));
+        formData.append('file', fs.createReadStream(filePath));
 
-        const response = await axios.post('https://api.assemblyai.com/v2/transcript', formData, {
+        const pinataResponse = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', formData, {
+            maxContentLength: Infinity,
             headers: {
-                ...formData.getHeaders(),
-                'authorization': 'YOUR_ASSEMBLYAI_API_KEY'
+                'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+                'pinata_api_key': process.env.PINATA_API_KEY,
+                'pinata_secret_api_key': process.env.PINATA_SECRET_API_KEY
             }
         });
 
-        const gender = response.data.acoustic_model ? 'Male' : 'Female'; // Replace with actual gender detection logic if available
+        const audioUrl = `https://gateway.pinata.cloud/ipfs/${pinataResponse.data.IpfsHash}`;
+        console.log("upload to "+audioUrl);
+        // Send the audio URL to AssemblyAI for transcription and speaker analysis
+        const response = await axios.post('https://api.assemblyai.com/v2/transcript', {
+            audio_url: audioUrl,
+            entity_detection: true
+        }, {
+            headers: {
+                'authorization': `Bearer ${process.env.ASSEMBLYAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Poll for the transcript to complete
+        let transcriptId = response.data.id;
+        let transcriptResponse;
+        do {
+            transcriptResponse = await axios.get(`https://api.assemblyai.com/v2/transcript/${transcriptId}`, {
+                headers: {
+                    'authorization': `Bearer ${process.env.ASSEMBLYAI_API_KEY}`
+                }
+            });
+            await new Promise(r => setTimeout(r, 5000)); // Wait 5 seconds between each poll
+        } while (transcriptResponse.data.status !== 'completed');
+
+        const speakers = transcriptResponse.data.speakers;
+        let gender = 'alien';
+        if (speakers && speakers.length > 0) {
+            gender = speakers[0].label === 'male' ? 'Male' : 'Female';
+        }
+
+        console.log(`speakers: ${speakers}`);
         console.log(`Gender detected: ${gender}`);
         res.redirect(`/?gender=${gender}`);
     } catch (error) {
