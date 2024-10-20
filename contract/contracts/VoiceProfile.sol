@@ -19,7 +19,7 @@ contract VoiceProfile is ERC721URIStorage, Ownable {
 
     mapping(uint256 => VoiceAttributes) public voiceAttributes;
 
-    constructor(uint256 _maxSupply) ERC721("VoiceProfile", "VPF") {
+    constructor(uint256 _maxSupply) ERC721("VoiceProfile", "VP") {
         _tokenIdCounter = 1;
         maxSupply = _maxSupply;
     }
@@ -39,7 +39,8 @@ contract VoiceProfile is ERC721URIStorage, Ownable {
         _tokenIdCounter++;
     }
 
+    // New function to get the current token ID (which represents the total supply)
     function getCurrentTokenId() public view returns (uint256) {
-        return _tokenIdCounter;
+        return _tokenIdCounter - 1;
     }
 }

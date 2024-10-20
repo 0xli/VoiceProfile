@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
-    "verify": "npx hardhat verify --network sepolia 0x1a1F1f4528abe4E9a08FC532fb7552a4ccfa618A \"10000\""
+    "verify": "npx hardhat verify --network sepolia 0xA7d4679258d09B7Da043D5594317EEf15A0788e5 \"10000\""
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.1.1",

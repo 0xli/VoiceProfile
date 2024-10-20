@@ -40,7 +40,7 @@ const upload = multer({
 // Add these environment variables
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const CONTRACT_ADDRESS = '0x1a1F1f4528abe4E9a08FC532fb7552a4ccfa618A';
+const CONTRACT_ADDRESS = '0xA7d4679258d09B7Da043D5594317EEf15A0788e5';
 console.log(SEPOLIA_RPC_URL);
 // Create provider
 const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);
@@ -98,16 +98,7 @@ app.post('/upload', upload.single('voiceFile'), async (req, res) => {
 // Add a new route to get minting status
 app.get('/mintingStatus', async (req, res) => {
     try {
-        let maxSupply;
-
-        // Check if maxSupply is a function or state variable
-        if (typeof contract.maxSupply === 'function') {
-            maxSupply = await contract.maxSupply();
-        } else {
-            maxSupply = await contract.maxSupply();
-        }
-
-        // Get the current token ID (which represents the current supply)
+        const maxSupply = await contract.maxSupply();
         const currentTokenId = await contract.getCurrentTokenId();
 
         res.json({

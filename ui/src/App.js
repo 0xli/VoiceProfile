@@ -60,7 +60,7 @@ const VoiceRecorder = ({ onRecordingComplete }) => {
     );
 };
 
-const CONTRACT_ADDRESS = '0x1a1F1f4528abe4E9a08FC532fb7552a4ccfa618A';
+const CONTRACT_ADDRESS = '0xA7d4679258d09B7Da043D5594317EEf15A0788e5';
 const ABI = [/* Include the ABI for the mintVoiceProfile function */];
 
 const ConnectWallet = () => {
@@ -124,7 +124,7 @@ const ConnectWallet = () => {
         formData.append('voiceFile', file);
 
         try {
-            const response = await axios.post('http://localhost:5000/upload', formData, {
+            const response = await axios.post('http://localhost:5001/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
