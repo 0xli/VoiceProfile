@@ -61,7 +61,79 @@ const VoiceRecorder = ({ onRecordingComplete }) => {
 };
 
 const CONTRACT_ADDRESS = '0xA7d4679258d09B7Da043D5594317EEf15A0788e5';
-const ABI = [/* Include the ABI for the mintVoiceProfile function */];
+const ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_maxSupply",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "getCurrentTokenId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxSupply",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "voiceUrl",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "voiceHash",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "gender",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "nativeLanguage",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "location",
+        "type": "string"
+      }
+    ],
+    "name": "mintVoiceProfile",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+  // ... include other functions from your contract
+];
 
 const ConnectWallet = () => {
     const { connect, error: connectError, isLoading } = useConnect();
@@ -82,7 +154,7 @@ const ConnectWallet = () => {
         enabled: Boolean(mintData),
     });
 
-    const { write: mint, error: mintError } = useContractWrite(config);
+    const { write: mint, data: mintResult, isLoading: isMinting, isSuccess, error: mintError } = useContractWrite(config);
 
     useEffect(() => {
         fetchMintingStatus();
@@ -90,9 +162,18 @@ const ConnectWallet = () => {
 
     const fetchMintingStatus = async () => {
         try {
-            const response = await axios.get('http://localhost:5001/mintingStatus');
-            setTotalSupply(response.data.totalSupply);
-            setMaxSupply(response.data.maxSupply);
+            const currentTokenId = await contract.getCurrentTokenId();
+            const maxSupply = await contract.maxSupply();
+            console.log('Current Token ID:', currentTokenId.toString());
+            console.log('Max Supply:', maxSupply.toString());
+            setTotalSupply(currentTokenId.toString());
+            setMaxSupply(maxSupply.toString());
+
+            // Add this to check the user's balance
+            if (address) {
+                const balance = await contract.balanceOf(address);
+                console.log('User NFT balance:', balance.toString());
+            }
         } catch (error) {
             console.error('Error fetching minting status:', error);
         }
@@ -146,12 +227,27 @@ const ConnectWallet = () => {
         }
 
         try {
-            await mint?.();
-            setStatus('NFT minted successfully!');
-            fetchMintingStatus(); // Update the minting status after successful mint
+            console.log('Attempting to mint...');
+            const result = await mint?.();
+            console.log('Mint result:', result);
+            setStatus('NFT minting transaction sent. Waiting for confirmation...');
+            
+            if (result && typeof result.wait === 'function') {
+                // Wait for the transaction to be mined
+                await result.wait();
+                setStatus('NFT minted successfully! Transaction confirmed.');
+            } else {
+                console.log('Transaction sent, but wait function not available. Please check your wallet for confirmation.');
+                setStatus('NFT minting transaction sent. Please check your wallet for confirmation.');
+            }
+            
+            // Wait an additional 5 seconds for the node to update
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            await fetchMintingStatus();
         } catch (error) {
-            console.error('Error minting NFT:', error);
-            setStatus('Error minting NFT.');
+            console.error('Detailed error:', error);
+            setStatus('Error minting NFT: ' + error.message);
         }
     };
 
@@ -164,7 +260,10 @@ const ConnectWallet = () => {
                     <input type="file" onChange={handleFileChange} accept="audio/*" />
                     <VoiceRecorder onRecordingComplete={handleRecordingComplete} />
                     <button onClick={handleUpload}>Upload and Analyze</button>
-                    {mintData && <button onClick={handleMint}>Mint NFT</button>}
+                    <button onClick={handleMint} disabled={isMinting}>
+                        {isMinting ? 'Minting...' : 'Mint NFT'}
+                    </button>
+                    {isSuccess && <div>Successfully minted your NFT!</div>}
                     <p>{status}</p>
                     {gender && <p>Detected gender: {gender}</p>}
                     <p>VoiceProfiles minted: {totalSupply} / {maxSupply}</p>
