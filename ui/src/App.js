@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createConfig, WagmiConfig, useAccount, useConnect, useDisconnect } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
@@ -67,6 +67,22 @@ const ConnectWallet = () => {
     const [file, setFile] = useState(null);
     const [status, setStatus] = useState('');
     const [gender, setGender] = useState('');
+    const [totalSupply, setTotalSupply] = useState(0);
+    const [maxSupply, setMaxSupply] = useState(0);
+
+    useEffect(() => {
+        fetchMintingStatus();
+    }, []);
+
+    const fetchMintingStatus = async () => {
+        try {
+            const response = await axios.get('http://localhost:5000/mintingStatus');
+            setTotalSupply(response.data.totalSupply);
+            setMaxSupply(response.data.maxSupply);
+        } catch (error) {
+            console.error('Error fetching minting status:', error);
+        }
+    };
 
     const handleConnect = async () => {
         try {
@@ -94,17 +110,19 @@ const ConnectWallet = () => {
         formData.append('voiceFile', file);
 
         try {
-            const response = await axios.post('http://localhost:5001/upload', formData, {
+            const response = await axios.post('http://localhost:5000/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
 
-            setStatus('File uploaded successfully!');
+            setStatus('File uploaded and NFT minted successfully!');
             setGender(response.data.gender);
+            setTotalSupply(response.data.totalSupply);
+            setMaxSupply(response.data.maxSupply);
         } catch (error) {
-            console.error('Detailed upload error:', error.response ? error.response.data : error);
-            setStatus('Error uploading file. Check console for details.');
+            console.error('Error uploading file:', error);
+            setStatus('Error uploading file and minting NFT.');
         }
     };
 
@@ -116,9 +134,10 @@ const ConnectWallet = () => {
                     <button onClick={() => disconnect()}>Disconnect</button>
                     <input type="file" onChange={handleFileChange} accept="audio/*" />
                     <VoiceRecorder onRecordingComplete={handleRecordingComplete} />
-                    <button onClick={handleUpload}>Upload and Analyze</button>
+                    <button onClick={handleUpload}>Upload, Analyze, and Mint NFT</button>
                     <p>{status}</p>
                     {gender && <p>Detected gender: {gender}</p>}
+                    <p>VoiceProfiles minted: {totalSupply} / {maxSupply}</p>
                 </div>
             ) : (
                 <div>

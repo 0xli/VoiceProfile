@@ -8,6 +8,8 @@ const fs = require('fs');
 const axios = require('axios');
 const FormData = require('form-data');
 const { pinFileToIPFS } = require('./pinata');
+const ethers = require('ethers');
+const VoiceProfileABI = require('./VoiceProfileABI.json'); // You'll need to create this file with the contract ABI
 
 const app = express();
 app.use(cors());
@@ -34,6 +36,16 @@ const upload = multer({
         }
     }
 });
+
+// Add these environment variables
+const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const CONTRACT_ADDRESS = '0x1a1F1f4528abe4E9a08FC532fb7552a4ccfa618A';
+
+// Initialize ethers provider and signer
+const provider = new ethers.providers.JsonRpcProvider(SEPOLIA_RPC_URL);
+const signer = new ethers.Wallet(PRIVATE_KEY, provider);
+const contract = new ethers.Contract(CONTRACT_ADDRESS, VoiceProfileABI, signer);
 
 app.post('/upload', upload.single('voiceFile'), async (req, res) => {
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
@@ -69,13 +81,38 @@ app.post('/upload', upload.single('voiceFile'), async (req, res) => {
             gender = speakers[0].label === 'male' ? 'Male' : 'Female';
         }
 
+        // Mint the NFT
+        const tx = await contract.mintVoiceProfile(audioUrl, pinataResult.IpfsHash, gender, 'Unknown', 'Unknown');
+        await tx.wait();
+
+        // Get the total supply
+        const totalSupply = await contract.totalSupply();
+        const maxSupply = await contract.maxSupply();
+
         res.status(200).json({
             audioUrl,
             ipfsHash: pinataResult.IpfsHash,
-            gender
+            gender,
+            totalSupply: totalSupply.toString(),
+            maxSupply: maxSupply.toString()
         });
     } catch (error) {
         console.error('Error processing file:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Add a new route to get minting status
+app.get('/mintingStatus', async (req, res) => {
+    try {
+        const totalSupply = await contract.totalSupply();
+        const maxSupply = await contract.maxSupply();
+        res.json({
+            totalSupply: totalSupply.toString(),
+            maxSupply: maxSupply.toString()
+        });
+    } catch (error) {
+        console.error('Error getting minting status:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
