@@ -5,7 +5,8 @@
   "main": "deploy.js",
   "scripts": {
     "compile": "npx hardhat compile",
-    "deploy": "npx hardhat run scripts/deploy.js --network goerli"
+    "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
+    "verify": "npx hardhat verify --network sepolia 0x1a1F1f4528abe4E9a08FC532fb7552a4ccfa618A \"10000\""
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.1.1",
@@ -14,6 +15,8 @@
     "dotenv": "^16.0.3",
     "ethers": "^5.7.0",
     "hardhat": "^2.12.6"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-etherscan": "^3.1.8"
   }
 }
-

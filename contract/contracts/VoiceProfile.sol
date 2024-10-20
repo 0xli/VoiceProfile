@@ -1,11 +1,11 @@
 // contract/VoiceNFT.sol
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract VoiceNFT is ERC721URIStorage, Ownable {
+contract VoiceProfile is ERC721URIStorage, Ownable {
     uint256 private _tokenIdCounter;
     uint256 public maxSupply;
 
@@ -19,12 +19,12 @@ contract VoiceNFT is ERC721URIStorage, Ownable {
 
     mapping(uint256 => VoiceAttributes) public voiceAttributes;
 
-    constructor(uint256 _maxSupply) ERC721("VoiceNFT", "VNFT") {
+    constructor(uint256 _maxSupply) ERC721("VoiceProfile", "VPF") {
         _tokenIdCounter = 1;
         maxSupply = _maxSupply;
     }
 
-    function mintVoiceNFT(
+    function mintVoiceProfile(
         string memory voiceUrl,
         string memory voiceHash,
         string memory gender,
@@ -39,4 +39,3 @@ contract VoiceNFT is ERC721URIStorage, Ownable {
         _tokenIdCounter++;
     }
 }
-
