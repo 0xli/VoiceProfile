@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAccount, useConnect, useDisconnect, useContractWrite, usePrepareContractWrite } from 'wagmi';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
 import axios from 'axios';
@@ -73,7 +73,7 @@ const ConnectWallet = () => {
   const audioRef = useRef(null);
   const mediaRecorderRef = useRef(null);
 
-  const { config } = usePrepareContractWrite({
+  const { config, error: prepareError } = usePrepareContractWrite({
     address: CONTRACT_ADDRESS,
     abi: ABI,
     functionName: 'mintVoiceProfile',
@@ -82,6 +82,18 @@ const ConnectWallet = () => {
   });
 
   const { write: mint, data: mintResult, isLoading: isMinting, isSuccess, error: mintError } = useContractWrite(config);
+
+  // Add a useEffect to call fetchMintingStatus after successful minting
+  useEffect(() => {
+    if (isSuccess) {
+      fetchMintingStatus();
+    }
+  }, [isSuccess]);
+
+  useEffect(() => {
+    console.log('mintData updated:', mintData);
+    console.log('New config:', config);
+  }, [mintData, config]);
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -146,19 +158,8 @@ const ConnectWallet = () => {
     }
 
     try {
-      const result = await mint?.();
-      console.log('Mint result:', result);
+      await mint?.();
       setStatus('NFT minting transaction sent. Waiting for confirmation...');
-      
-      if (result && typeof result.wait === 'function') {
-        await result.wait();
-        setStatus('NFT minted successfully! Transaction confirmed.');
-      } else {
-        setStatus('NFT minting transaction sent. Please check your wallet for confirmation.');
-      }
-      
-      // Fetch updated minting status
-      fetchMintingStatus();
     } catch (error) {
       console.error('Error minting NFT:', error);
       setStatus('Error minting NFT: ' + error.message);
@@ -166,8 +167,14 @@ const ConnectWallet = () => {
   };
 
   const fetchMintingStatus = async () => {
-    // Implement this function to fetch the current total supply and max supply
-    // You'll need to call your smart contract methods here
+    try {
+      const currentTokenId = await contract.getCurrentTokenId();
+      const maxSupply = await contract.maxSupply();
+      setTotalSupply(currentTokenId.toString());
+      setMaxSupply(maxSupply.toString());
+    } catch (error) {
+      console.error('Error fetching minting status:', error);
+    }
   };
 
   if (isConnected) {
