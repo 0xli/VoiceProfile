@@ -3,6 +3,7 @@ import { WagmiConfig, createConfig, configureChains } from 'wagmi';
 import { sepolia } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
+import { InjectedConnector } from 'wagmi/connectors/injected';
 import ConnectWallet from './ConnectWallet';
 import './App.css';
 import logo from './logo.webp';  // Import the logo
@@ -17,7 +18,8 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
 const config = createConfig({
   autoConnect: true,
   connectors: [
-    new MetaMaskConnector({ chains })
+    new MetaMaskConnector({ chains }),
+    new InjectedConnector({ chains, options: { name: 'Injected' } })
   ],
   publicClient,
   webSocketPublicClient,
