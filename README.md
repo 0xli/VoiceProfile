@@ -4,6 +4,9 @@ Create dynamic user profiles through voice recordings minted as NFTs. Capture th
 ## Overview
 This project aims to transform the way user profiles are created and utilized in social applications by harnessing the power of voice recordings and blockchain technology. Instead of relying on traditional, text-based profiles created through Graphical User Interfaces (GUIs), users can upload voice recordings that are analyzed by AI to generate rich, dynamic profiles. These profiles are then minted as Non-Fungible Tokens (NFTs), allowing them to be uniquely owned, verified, and shared across multiple social platforms. The project leverages the richness of voice—which carries nuances of emotion, personality, and identity—to enhance social interactions and matchmaking.
 
+## Contract Deployed
+- Sepolia: 0xA7d4679258d09B7Da043D5594317EEf15A0788e5
+  
 ## Key Components:
 
 Voice Recording Upload:
